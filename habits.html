@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Habits</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #1c1420;
+      --surface: #2a1f30;
+      --surface2: #352840;
+      --accent: #e8a0bf;
+      --accent2: #c9b1ff;
+      --text: #f0e6ff;
+      --text-muted: #9980b0;
+      --vitamins: #f4a8c7;
+      --meditation: #b8a0f0;
+      --journal: #f5d08a;
+      --bonus: #a8e6cf;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Streak bar */
+    #streak-bar {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      background: var(--surface);
+      padding: 0.8rem 2rem;
+      border-radius: 50px;
+      align-items: center;
+    }
+
+    .streak-item {
+      text-align: center;
+    }
+
+    .streak-item .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .streak-item .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .streak-divider {
+      width: 1px;
+      height: 2rem;
+      background: var(--surface2);
+    }
+
+    /* Habit cards */
+    #habits {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 2.5rem;
+    }
+
+    .habit-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.3rem;
+      background: var(--surface);
+      border-radius: 16px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, background 0.2s, transform 0.1s;
+      user-select: none;
+    }
+
+    .habit-card:hover:not(.done) {
+      background: var(--surface2);
+      transform: translateY(-2px);
+    }
+
+    .habit-card.done {
+      border-color: var(--accent);
+      cursor: default;
+      opacity: 0.75;
+    }
+
+    .habit-card .icon {
+      font-size: 1.8rem;
+      width: 2.2rem;
+      text-align: center;
+    }
+
+    .habit-card .info {
+      flex: 1;
+    }
+
+    .habit-card .name {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .habit-card .hint {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 0.1rem;
+    }
+
+    .habit-card .check {
+      font-size: 1.4rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .habit-card.done .check { opacity: 1; }
+
+    /* Marble color dots */
+    .habit-card[data-habit="vitamins"] .marble-dot { background: var(--vitamins); }
+    .habit-card[data-habit="meditation"] .marble-dot { background: var(--meditation); }
+    .habit-card[data-habit="journal"] .marble-dot { background: var(--journal); }
+
+    .marble-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    /* Bowl section */
+    #bowl-section {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+
+    #bowl-section h2 {
+      font-size: 1rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 1rem;
+    }
+
+    #marble-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.6rem;
+    }
+
+    #bowl-svg-wrap {
+      position: relative;
+      display: inline-block;
+    }
+
+    #bowl-canvas {
+      width: 320px;
+      height: 260px;
+    }
+
+    /* Legend */
+    #legend {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface2);
+      border: 1px solid var(--accent2);
+      color: var(--text);
+      padding: 0.9rem 1.6rem;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.35s, transform 0.35s;
+      white-space: nowrap;
+      z-index: 1000;
+      pointer-events: none;
+      max-width: 90vw;
+      white-space: normal;
+      text-align: center;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Confetti canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Marble drop animation */
+    @keyframes marbleDrop {
+      0%   { transform: translateY(-40px) scale(0.5); opacity: 0; }
+      60%  { transform: translateY(4px) scale(1.1); opacity: 1; }
+      80%  { transform: translateY(-3px) scale(0.95); }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .marble-new {
+      animation: marbleDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    /* Date display */
+    #date-display {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Daily Habits</h1>
+  <p>Small steps, big changes ✨</p>
+</header>
+
+<div id="date-display"></div>
+
+<div id="streak-bar">
+  <div class="streak-item">
+    <div class="label">🔥 Streak</div>
+    <div class="value" id="streak-val">0</div>
+  </div>
+  <div class="streak-divider"></div>
+  <div class="streak-item">
+    <div class="label">Best</div>
+    <div class="value" id="best-val">0</div>
+  </div>
+  <div class="streak-divider"></div>
+  <div class="streak-item">
+    <div class="label">Total Days</div>
+    <div class="value" id="days-val">0</div>
+  </div>
+</div>
+
+<div id="habits">
+  <div class="habit-card" data-habit="vitamins" onclick="checkHabit('vitamins')">
+    <div class="icon">💊</div>
+    <div class="info">
+      <div class="name"><span class="marble-dot"></span>Prenatal Vitamins</div>
+      <div class="hint">Take with food or water</div>
+    </div>
+    <div class="check">✓</div>
+  </div>
+  <div class="habit-card" data-habit="meditation" onclick="checkHabit('meditation')">
+    <div class="icon">🧘</div>
+    <div class="info">
+      <div class="name"><span class="marble-dot"></span>Morning Meditation</div>
+      <div class="hint">Even 5 minutes counts</div>
+    </div>
+    <div class="check">✓</div>
+  </div>
+  <div class="habit-card" data-habit="journal" onclick="checkHabit('journal')">
+    <div class="icon">✍️</div>
+    <div class="info">
+      <div class="name"><span class="marble-dot"></span>Daily Journal</div>
+      <div class="hint">Reflect on your day</div>
+    </div>
+    <div class="check">✓</div>
+  </div>
+</div>
+
+<div id="bowl-section">
+  <h2>Your Marble Bowl</h2>
+  <div id="bowl-svg-wrap">
+    <svg id="bowl-canvas" viewBox="0 0 320 260" xmlns="http://www.w3.org/2000/svg">
+      <!-- Bowl shape -->
+      <defs>
+        <clipPath id="bowlClip">
+          <!-- Clip path mirrors the bowl interior -->
+          <path d="M 60 60 Q 55 180 160 220 Q 265 180 260 60 Z"/>
+        </clipPath>
+        <radialGradient id="marbleGradVitamins" cx="35%" cy="35%">
+          <stop offset="0%" stop-color="#ffd6e8"/>
+          <stop offset="100%" stop-color="#d4607a"/>
+        </radialGradient>
+        <radialGradient id="marbleGradMeditation" cx="35%" cy="35%">
+          <stop offset="0%" stop-color="#ddd6ff"/>
+          <stop offset="100%" stop-color="#7c5fc9"/>
+        </radialGradient>
+        <radialGradient id="marbleGradJournal" cx="35%" cy="35%">
+          <stop offset="0%" stop-color="#fff3c4"/>
+          <stop offset="100%" stop-color="#c8930a"/>
+        </radialGradient>
+        <radialGradient id="marbleGradBonus" cx="35%" cy="35%">
+          <stop offset="0%" stop-color="#d4f5e9"/>
+          <stop offset="100%" stop-color="#3a9e7a"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Bowl outline (back) -->
+      <path d="M 55 58 Q 50 185 160 225 Q 270 185 265 58"
+            fill="none" stroke="#4a3560" stroke-width="3"/>
+
+      <!-- Marble group (clipped to bowl) -->
+      <g id="marbles-group" clip-path="url(#bowlClip)"></g>
+
+      <!-- Bowl rim (front) -->
+      <ellipse cx="160" cy="58" rx="105" ry="14" fill="#2a1f30" stroke="#6a4f90" stroke-width="2.5"/>
+      <ellipse cx="160" cy="58" rx="105" ry="14" fill="none" stroke="#9060c0" stroke-width="1" opacity="0.4"/>
+
+      <!-- Bowl shine -->
+      <path d="M 70 80 Q 80 70 100 75" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div id="marble-count">0 marbles collected</div>
+
+  <div id="legend">
+    <div class="legend-item"><span class="marble-dot" style="background:var(--vitamins)"></span> Vitamins</div>
+    <div class="legend-item"><span class="marble-dot" style="background:var(--meditation)"></span> Meditation</div>
+    <div class="legend-item"><span class="marble-dot" style="background:var(--journal)"></span> Journal</div>
+    <div class="legend-item"><span class="marble-dot" style="background:var(--bonus)"></span> Bonus</div>
+  </div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+const HABITS = ['vitamins', 'meditation', 'journal'];
+const MARBLE_COLORS = {
+  vitamins:   'url(#marbleGradVitamins)',
+  meditation: 'url(#marbleGradMeditation)',
+  journal:    'url(#marbleGradJournal)',
+  bonus:      'url(#marbleGradBonus)'
+};
+
+function todayStr() {
+  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+}
+
+function loadState() {
+  const raw = localStorage.getItem('habits_state');
+  const defaults = {
+    todayChecked: { vitamins: false, meditation: false, journal: false },
+    lastDate: todayStr(),
+    totalMarbles: 0,
+    marbleLog: [],   // array of {type, date}
+    currentStreak: 0,
+    longestStreak: 0,
+    totalDays: 0,
+    seenRewards: []
+  };
+  if (!raw) return defaults;
+  const s = Object.assign(defaults, JSON.parse(raw));
+
+  // Day rollover
+  if (s.lastDate !== todayStr()) {
+    const wasComplete = HABITS.every(h => s.todayChecked[h]);
+    if (wasComplete) {
+      s.currentStreak += 1;
+      s.totalDays += 1;
+      if (s.currentStreak > s.longestStreak) s.longestStreak = s.currentStreak;
+    } else {
+      s.currentStreak = 0;
+    }
+    s.todayChecked = { vitamins: false, meditation: false, journal: false };
+    s.lastDate = todayStr();
+  }
+  return s;
+}
+
+function saveState(s) {
+  localStorage.setItem('habits_state', JSON.stringify(s));
+}
+
+let state = loadState();
+
+// ── Marble Bowl Layout ─────────────────────────────────────────────
+// Bowl interior approximated as a trapezoid that widens at the bottom.
+// We stack marbles in rows from the bottom up.
+
+const MARBLE_R = 12; // radius
+const BOWL_BOTTOM_Y = 215;
+const BOWL_CENTER_X = 160;
+
+// Half-width of bowl at a given y (approximated from path)
+function bowlHalfWidth(y) {
+  // At y=215 (bottom), half-width ≈ 10; at y=65 (rim), half-width ≈ 100
+  const t = (y - 215) / (65 - 215); // 0 at bottom, 1 at rim
+  return 10 + t * 90;
+}
+
+function computeMarblePositions(count) {
+  const positions = [];
+  let remaining = count;
+  let rowY = BOWL_BOTTOM_Y - MARBLE_R;
+
+  while (remaining > 0) {
+    const hw = bowlHalfWidth(rowY);
+    const available = Math.max(1, Math.floor((hw * 2 - MARBLE_R) / (MARBLE_R * 2)));
+    const inRow = Math.min(available, remaining);
+    const totalW = inRow * MARBLE_R * 2;
+    const startX = BOWL_CENTER_X - totalW / 2 + MARBLE_R;
+    for (let i = 0; i < inRow; i++) {
+      positions.push({ x: startX + i * MARBLE_R * 2, y: rowY });
+    }
+    remaining -= inRow;
+    rowY -= MARBLE_R * 2;
+    if (rowY < 65) break; // above rim
+  }
+  return positions;
+}
+
+function renderBowl(animateLastN = 0) {
+  const group = document.getElementById('marbles-group');
+  const log = state.marbleLog;
+  const positions = computeMarblePositions(log.length);
+  group.innerHTML = '';
+
+  positions.forEach((pos, i) => {
+    const type = log[i] ? log[i].type : 'bonus';
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', pos.x);
+    circle.setAttribute('cy', pos.y);
+    circle.setAttribute('r', MARBLE_R);
+    circle.setAttribute('fill', MARBLE_COLORS[type] || MARBLE_COLORS.bonus);
+
+    if (animateLastN > 0 && i >= log.length - animateLastN) {
+      circle.classList.add('marble-new');
+    }
+    group.appendChild(circle);
+
+    // Shine dot
+    const shine = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    shine.setAttribute('cx', pos.x - MARBLE_R * 0.3);
+    shine.setAttribute('cy', pos.y - MARBLE_R * 0.3);
+    shine.setAttribute('r', MARBLE_R * 0.25);
+    shine.setAttribute('fill', 'rgba(255,255,255,0.35)');
+    if (animateLastN > 0 && i >= log.length - animateLastN) {
+      shine.classList.add('marble-new');
+    }
+    group.appendChild(shine);
+  });
+
+  const count = log.length;
+  document.getElementById('marble-count').textContent =
+    count === 1 ? '1 marble collected' : `${count} marbles collected`;
+}
+
+// ── UI ────────────────────────────────────────────────────────────
+function renderCards() {
+  HABITS.forEach(h => {
+    const card = document.querySelector(`[data-habit="${h}"]`);
+    if (state.todayChecked[h]) {
+      card.classList.add('done');
+    } else {
+      card.classList.remove('done');
+    }
+  });
+}
+
+function renderStats() {
+  document.getElementById('streak-val').textContent = state.currentStreak;
+  document.getElementById('best-val').textContent = state.longestStreak;
+  document.getElementById('days-val').textContent = state.totalDays;
+}
+
+function renderDate() {
+  const d = new Date();
+  document.getElementById('date-display').textContent =
+    d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+// ── Habit Check ───────────────────────────────────────────────────
+function checkHabit(habit) {
+  if (state.todayChecked[habit]) return;
+  state.todayChecked[habit] = true;
+
+  // Add marble
+  state.marbleLog.push({ type: habit, date: todayStr() });
+  state.totalMarbles++;
+
+  const isFirst = state.totalMarbles === 1;
+  const allDone = HABITS.every(h => state.todayChecked[h]);
+
+  if (allDone) {
+    // Bonus marble
+    state.marbleLog.push({ type: 'bonus', date: todayStr() });
+    state.totalMarbles++;
+    state.currentStreak = (state.currentStreak || 0);
+    // We don't increment streak here — that happens on next day rollover
+    // But track total complete days
+    if (!state._completedToday) {
+      state._completedToday = true;
+    }
+  }
+
+  saveState(state);
+  renderCards();
+  renderBowl(allDone ? 2 : 1);
+  renderStats();
+  checkRewards(habit, allDone, isFirst);
+}
+
+// ── Rewards ───────────────────────────────────────────────────────
+const MILESTONES_MARBLES = [10, 25, 50, 100];
+const MILESTONES_STREAKS = [3, 7, 14, 30];
+
+function checkRewards(habit, allDone, isFirst) {
+  const rewards = state.seenRewards;
+
+  if (isFirst && !rewards.includes('first-marble')) {
+    rewards.push('first-marble');
+    showToast('Great start! Your first marble 🎉');
+  }
+
+  if (allDone && !rewards.includes(`all-done-${todayStr()}`)) {
+    rewards.push(`all-done-${todayStr()}`);
+    setTimeout(() => {
+      showToast('Perfect day! All habits done! 🌟');
+      launchConfetti();
+    }, 400);
+  }
+
+  MILESTONES_MARBLES.forEach(m => {
+    const key = `marbles-${m}`;
+    if (state.totalMarbles >= m && !rewards.includes(key)) {
+      rewards.push(key);
+      const msgs = {
+        10:  'You\'ve collected 10 marbles! 💫',
+        25:  'Your bowl is really filling up! ✨ 25 marbles!',
+        50:  'Halfway to 100! You\'re unstoppable 🎊',
+        100: 'Bowl overflowing! 100 marbles — you\'re incredible 🏆'
+      };
+      setTimeout(() => showToast(msgs[m]), 800);
+    }
+  });
+
+  // Streak milestones checked on day rollover, but show on next check-in
+  MILESTONES_STREAKS.forEach(s => {
+    const key = `streak-${s}`;
+    if (state.currentStreak >= s && !rewards.includes(key)) {
+      rewards.push(key);
+      const msgs = {
+        3:  '3-day streak! You\'re building something beautiful 🌱',
+        7:  'One full week! You\'re on fire 🔥',
+        14: 'Two weeks strong! This is a real habit now 💪',
+        30: '30-DAY STREAK! You are absolutely amazing 🌸'
+      };
+      showToast(msgs[s]);
+    }
+  });
+
+  state.seenRewards = rewards;
+  saveState(state);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// ── Confetti ──────────────────────────────────────────────────────
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = ['#f4a8c7','#b8a0f0','#f5d08a','#a8e6cf','#ffd6e8','#ddd6ff'];
+  const particles = Array.from({ length: 120 }, () => ({
+    x: Math.random() * canvas.width,
+    y: -10,
+    w: Math.random() * 8 + 4,
+    h: Math.random() * 4 + 2,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    vx: (Math.random() - 0.5) * 4,
+    vy: Math.random() * 3 + 2,
+    rot: Math.random() * Math.PI * 2,
+    vrot: (Math.random() - 0.5) * 0.2,
+    life: 1
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vrot;
+      p.vy += 0.05;
+      if (p.y < canvas.height + 20) alive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.min(1, (canvas.height - p.y) / (canvas.height * 0.3));
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    if (alive) requestAnimationFrame(draw);
+    else ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  draw();
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+renderDate();
+renderCards();
+renderStats();
+renderBowl(0);
+</script>
+</body>
+</html>
