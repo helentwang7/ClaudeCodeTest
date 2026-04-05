@@ -208,6 +208,18 @@
       color: var(--accent);
     }
 
+    .cal-link {
+      display: block;
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--accent3);
+      text-decoration: none;
+      margin-top: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .cal-link:hover { text-decoration: underline; }
+
     /* Empty state */
     .empty-state {
       text-align: center;
@@ -686,6 +698,27 @@
 
   // ── Rendering ─────────────────────────────────────────────────────────────
 
+  function googleCalURL(meetup, dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const pad = n => String(n).padStart(2, '0');
+    const endMinutes = meetup.hour * 60 + meetup.minute + meetup.durationMin;
+    const endH = Math.floor(endMinutes / 60) % 24;
+    const endM = endMinutes % 60;
+    const start = `${year}${pad(month)}${pad(day)}T${pad(meetup.hour)}${pad(meetup.minute)}00`;
+    const end   = `${year}${pad(month)}${pad(day)}T${pad(endH)}${pad(endM)}00`;
+    const location = meetup.location === 'jackson'
+      ? 'Jackson Park Dog Park, Long Island City, NY'
+      : 'Sven Dog Park, Long Island City, NY';
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: meetup.name + ' — Wilsy',
+      dates: start + '/' + end,
+      details: meetup.description,
+      location
+    });
+    return 'https://calendar.google.com/calendar/render?' + params.toString();
+  }
+
   function meetupCardHTML(occ) {
     const m = occ.meetup;
     const sizePill = m.sizeFilter
@@ -693,6 +726,9 @@
       : `<span class="size-pill all">All sizes</span>`;
     const rsvpClass = occ.isRSVPd ? ' going' : '';
     const rsvpLabel = occ.isRSVPd ? 'Going ✓' : 'RSVP';
+    const calLink = occ.isRSVPd
+      ? `<a class="cal-link" href="${googleCalURL(m, occ.dateStr)}" target="_blank" rel="noopener">📅 Add to Cal</a>`
+      : '';
     return `
       <div class="meetup-card">
         <div class="meetup-emoji">${m.emoji}</div>
@@ -706,7 +742,10 @@
           </div>
           <div class="meetup-desc">${m.description}</div>
         </div>
-        <button class="rsvp-btn${rsvpClass}" onclick="toggleRSVP('${m.id}','${occ.dateStr}')">${rsvpLabel}</button>
+        <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;align-self:center">
+          <button class="rsvp-btn${rsvpClass}" onclick="toggleRSVP('${m.id}','${occ.dateStr}')">${rsvpLabel}</button>
+          ${calLink}
+        </div>
       </div>`;
   }
 
