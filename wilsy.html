@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wilsy — Jackson Park Dog Meetups</title>
+  <style>
+    :root {
+      --bg: #141a12;
+      --surface: #1f2b1c;
+      --surface2: #2b3a27;
+      --surface3: #354a30;
+      --accent: #7ec96a;
+      --accent2: #f0c060;
+      --accent3: #6bbfb5;
+      --text: #eef4eb;
+      --text-muted: #7a9470;
+      --danger: #d97a5a;
+      --border: #3a5035;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding-bottom: 70px;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.25rem 0.75rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent);
+    }
+
+    header .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Tab nav */
+    #tab-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 20;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 0.6rem 0.25rem 0.5rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: color 0.15s;
+      letter-spacing: 0.5px;
+    }
+
+    .tab-btn .tab-icon { font-size: 1.3rem; line-height: 1; }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn:hover { color: var(--text); }
+
+    /* Views */
+    .view { display: none; padding: 1.25rem; max-width: 480px; margin: 0 auto; }
+    .view.active { display: block; }
+
+    /* Profile incomplete banner */
+    .profile-banner {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent2);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .profile-banner a {
+      color: var(--accent2);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* Section label */
+    .day-header {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin: 1.5rem 0 0.6rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .day-header:first-child { margin-top: 0; }
+
+    /* Meetup card */
+    .meetup-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.9rem 1rem;
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .meetup-emoji {
+      font-size: 1.8rem;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .meetup-info { flex: 1; min-width: 0; }
+
+    .meetup-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .meetup-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .meetup-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+      line-height: 1.4;
+    }
+
+    .size-pill {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--accent2);
+      background: rgba(240,192,96,0.12);
+      border: 1px solid rgba(240,192,96,0.3);
+      border-radius: 20px;
+      padding: 1px 7px;
+      letter-spacing: 0.5px;
+    }
+
+    .size-pill.all {
+      color: var(--text-muted);
+      background: none;
+      border-color: var(--border);
+    }
+
+    .rsvp-btn {
+      flex-shrink: 0;
+      padding: 0.4rem 0.75rem;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+      white-space: nowrap;
+      align-self: center;
+    }
+
+    .rsvp-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .rsvp-btn.going {
+      background: rgba(126,201,106,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .empty-state .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+
+    /* Profile card (top of My Plans) */
+    .dog-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .dog-card-avatar { font-size: 2.4rem; line-height: 1; flex-shrink: 0; }
+
+    .dog-card-info { flex: 1; min-width: 0; }
+
+    .dog-card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .dog-card-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .dog-card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      margin-top: 0.5rem;
+    }
+
+    .tag {
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--surface3);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .tag.green { color: var(--accent); border-color: rgba(126,201,106,0.3); background: rgba(126,201,106,0.1); }
+    .tag.red   { color: var(--danger); border-color: rgba(217,122,90,0.3); background: rgba(217,122,90,0.1); }
+
+    /* Profile form */
+    .form-section {
+      margin-bottom: 1.4rem;
+    }
+
+    .form-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .avatar-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .avatar-opt {
+      font-size: 1.6rem;
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s;
+    }
+
+    .avatar-opt.selected {
+      border-color: var(--accent);
+      background: rgba(126,201,106,0.12);
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: border-color 0.15s;
+      resize: none;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    input[type="text"]::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .pill-opt {
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .pill-opt.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(126,201,106,0.1);
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 0.8rem;
+      border-radius: 12px;
+      border: 2px solid var(--accent);
+      background: rgba(126,201,106,0.15);
+      color: var(--accent);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .save-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 0.55rem 1.25rem;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Plans view header */
+    .plans-header {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>WILSY</h1>
+  <div class="subtitle">Jackson Park Dog Meetups · LIC</div>
+</header>
+
+<div id="view-dog" class="view">
+  <div class="form-section">
+    <span class="form-label">Avatar</span>
+    <div class="avatar-row" id="avatar-row"></div>
+  </div>
+  <div class="form-section">
+    <label class="form-label" for="inp-dog-name">Dog's Name</label>
+    <input type="text" id="inp-dog-name" placeholder="Biscuit, Mochi, Luna…">
+  </div>
+  <div class="form-section">
+    <label class="form-label" for="inp-owner-name">Your Name</label>
+    <input type="text" id="inp-owner-name" placeholder="Your first name">
+  </div>
+  <div class="form-section">
+    <label class="form-label" for="inp-breed">Breed</label>
+    <input type="text" id="inp-breed" placeholder="Golden mix, Cavapoo, Shepherd…">
+  </div>
+  <div class="form-section">
+    <label class="form-label" for="inp-age">Age</label>
+    <input type="text" id="inp-age" placeholder="2 years, 8 months…">
+  </div>
+  <div class="form-section">
+    <span class="form-label">Size</span>
+    <div class="pill-row" id="size-row">
+      <div class="pill-opt" data-size="XS">XS</div>
+      <div class="pill-opt" data-size="S">S</div>
+      <div class="pill-opt" data-size="M">M</div>
+      <div class="pill-opt" data-size="L">L</div>
+      <div class="pill-opt" data-size="XL">XL</div>
+    </div>
+  </div>
+  <div class="form-section">
+    <span class="form-label">Play Style</span>
+    <div class="pill-row" id="style-row">
+      <div class="pill-opt style-pill" data-style="Energetic">Energetic</div>
+      <div class="pill-opt style-pill" data-style="Gentle">Gentle</div>
+      <div class="pill-opt style-pill" data-style="Selective">Selective</div>
+      <div class="pill-opt style-pill" data-style="Shy">Shy</div>
+    </div>
+  </div>
+  <div class="form-section">
+    <label class="form-label" for="inp-friendly">Friendly With</label>
+    <input type="text" id="inp-friendly" placeholder="Doodles, Labs, small dogs…">
+  </div>
+  <div class="form-section">
+    <label class="form-label" for="inp-avoid">Prefers to Avoid</label>
+    <input type="text" id="inp-avoid" placeholder="Cattle dogs, large males…">
+  </div>
+  <div class="form-section">
+    <label class="form-label" for="inp-bio">Bio</label>
+    <textarea id="inp-bio" rows="3" placeholder="Tell the pack about your dog…"></textarea>
+  </div>
+  <button class="save-btn" onclick="saveDogProfile()">Save Profile</button>
+</div>
+
+<div id="view-meetups" class="view">
+  <div id="meetups-banner" class="profile-banner" style="display:none">
+    🐶 <span>Add your dog first so meetup hosts know who's coming! <a onclick="switchTab('dog')">Set up profile →</a></span>
+  </div>
+  <div id="meetups-list"></div>
+</div>
+
+<div id="view-plans" class="view">
+  <div id="plans-banner" class="profile-banner" style="display:none">
+    🐶 <span>Add your dog first so meetup hosts know who's coming! <a onclick="switchTab('dog')">Set up profile →</a></span>
+  </div>
+  <div id="dog-card-container"></div>
+  <div id="plans-list"></div>
+</div>
+
+<nav id="tab-nav">
+  <button class="tab-btn" data-tab="dog" onclick="switchTab('dog')">
+    <span class="tab-icon">🐾</span>My Dog
+  </button>
+  <button class="tab-btn" data-tab="meetups" onclick="switchTab('meetups')">
+    <span class="tab-icon">📅</span>Meetups
+  </button>
+  <button class="tab-btn" data-tab="plans" onclick="switchTab('plans')">
+    <span class="tab-icon">⭐</span>My Plans
+  </button>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+  const AVATARS = ['🐶','🐕','🦮','🐩','🫶','🐾','🌿','⭐'];
+
+  const MEETUPS = [
+    {
+      id: 'puppy-hour-sat',
+      name: 'Puppy Hour',
+      emoji: '🐶',
+      location: 'jackson',
+      dayOfWeek: 6,
+      hour: 8, minute: 0,
+      durationMin: 60,
+      sizeFilter: null,
+      description: 'Dogs under 18 months only. Supervised gentle play at Jackson Park.'
+    },
+    {
+      id: 'small-doodles-sat',
+      name: 'Small Doodle Meetup',
+      emoji: '🐩',
+      location: 'jackson',
+      dayOfWeek: 6,
+      hour: 10, minute: 0,
+      durationMin: 90,
+      sizeFilter: ['XS','S'],
+      description: 'Goldendoodles, cockapoos, maltipoos — the curly crew gathers at Jackson Park.'
+    },
+    {
+      id: 'weekend-big-dogs-sun',
+      name: 'Weekend Big Dogs',
+      emoji: '🐕',
+      location: 'jackson',
+      dayOfWeek: 0,
+      hour: 9, minute: 0,
+      durationMin: 120,
+      sizeFilter: ['L','XL'],
+      description: 'The big-dog Sunday social. Labs, goldens, shepherds, and bernese welcome.'
+    },
+    {
+      id: 'morning-pawers-mon',
+      name: 'Morning Pawers',
+      emoji: '🌅',
+      location: 'sven',
+      dayOfWeek: 1,
+      hour: 7, minute: 30,
+      durationMin: 60,
+      sizeFilter: null,
+      description: 'Early birds and their dogs. Sven Dog Park before the workday rush.'
+    },
+    {
+      id: 'twilight-trot-tue',
+      name: 'Twilight Trot',
+      emoji: '🌙',
+      location: 'sven',
+      dayOfWeek: 2,
+      hour: 18, minute: 30,
+      durationMin: 60,
+      sizeFilter: null,
+      description: 'After-work wind-down at Sven. All sizes, chill energy preferred.'
+    },
+    {
+      id: 'morning-pawers-wed',
+      name: 'Morning Pawers',
+      emoji: '🌅',
+      location: 'sven',
+      dayOfWeek: 3,
+      hour: 7, minute: 30,
+      durationMin: 60,
+      sizeFilter: null,
+      description: 'Midweek morning run. Sven Dog Park.'
+    },
+    {
+      id: 'twilight-trot-thu',
+      name: 'Twilight Trot',
+      emoji: '🌙',
+      location: 'sven',
+      dayOfWeek: 4,
+      hour: 18, minute: 30,
+      durationMin: 60,
+      sizeFilter: null,
+      description: 'Thursday evening edition. Wrap up the week with a sunset sniff at Sven.'
+    },
+    {
+      id: 'morning-pawers-fri',
+      name: 'Morning Pawers',
+      emoji: '🌅',
+      location: 'sven',
+      dayOfWeek: 5,
+      hour: 7, minute: 30,
+      durationMin: 60,
+      sizeFilter: null,
+      description: 'TGIF morning meetup at Sven before the weekend.'
+    }
+  ];
+
+  const LOCATION_LABELS = {
+    jackson: '📍 Jackson Park Dog Park',
+    sven:    '📍 Sven Dog Park'
+  };
+
+  // ── State ─────────────────────────────────────────────────────────────────
+
+  let state;
+
+  function loadState() {
+    const defaults = {
+      dog: { name:'', ownerName:'', breed:'', size:'', age:'', playStyles:[], friendlyBreeds:'', avoidBreeds:'', bio:'', avatar:'🐶' },
+      rsvps: {},
+      profileSaved: false,
+      activeTab: 'meetups'
+    };
+    try {
+      const raw = localStorage.getItem('wilsy_state');
+      if (!raw) return defaults;
+      const saved = JSON.parse(raw);
+      const merged = Object.assign({}, defaults, saved);
+      merged.dog = Object.assign({}, defaults.dog, saved.dog || {});
+      merged.rsvps = saved.rsvps || {};
+      // Prune expired RSVP keys
+      const today = todayStr();
+      for (const key of Object.keys(merged.rsvps)) {
+        const dateStr = key.split('::')[1];
+        if (dateStr && dateStr < today) delete merged.rsvps[key];
+      }
+      return merged;
+    } catch(e) {
+      return defaults;
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem('wilsy_state', JSON.stringify(state));
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
+
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function formatTime(h, m) {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return h12 + (m ? ':' + String(m).padStart(2,'0') : ':00') + ' ' + ampm;
+  }
+
+  function formatDateHeader(date) {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return days[date.getDay()] + ', ' + months[date.getMonth()] + ' ' + date.getDate();
+  }
+
+  function toDateStr(date) {
+    return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── Calendar logic ────────────────────────────────────────────────────────
+
+  function generateOccurrences(daysAhead) {
+    const occurrences = [];
+    const base = new Date();
+    base.setHours(0,0,0,0);
+    for (let d = 0; d < daysAhead; d++) {
+      const date = new Date(base.getTime() + d * 86400000);
+      const dow = date.getDay();
+      for (const meetup of MEETUPS) {
+        if (meetup.dayOfWeek === dow) {
+          const dateStr = toDateStr(date);
+          const key = meetup.id + '::' + dateStr;
+          occurrences.push({ meetup, date: new Date(date), dateStr, key, isRSVPd: state.rsvps[key] === true });
+        }
+      }
+    }
+    // Sort by date then time within day
+    occurrences.sort((a, b) => {
+      if (a.dateStr !== b.dateStr) return a.dateStr < b.dateStr ? -1 : 1;
+      if (a.meetup.hour !== b.meetup.hour) return a.meetup.hour - b.meetup.hour;
+      return a.meetup.minute - b.meetup.minute;
+    });
+    return occurrences;
+  }
+
+  // ── Rendering ─────────────────────────────────────────────────────────────
+
+  function meetupCardHTML(occ) {
+    const m = occ.meetup;
+    const sizePill = m.sizeFilter
+      ? `<span class="size-pill">${m.sizeFilter.join(' · ')}</span>`
+      : `<span class="size-pill all">All sizes</span>`;
+    const rsvpClass = occ.isRSVPd ? ' going' : '';
+    const rsvpLabel = occ.isRSVPd ? 'Going ✓' : 'RSVP';
+    return `
+      <div class="meetup-card">
+        <div class="meetup-emoji">${m.emoji}</div>
+        <div class="meetup-info">
+          <div class="meetup-name">${m.name}</div>
+          <div class="meetup-meta">
+            <span>${formatTime(m.hour, m.minute)}</span>
+            <span>·</span>
+            <span>${LOCATION_LABELS[m.location]}</span>
+            ${sizePill}
+          </div>
+          <div class="meetup-desc">${m.description}</div>
+        </div>
+        <button class="rsvp-btn${rsvpClass}" onclick="toggleRSVP('${m.id}','${occ.dateStr}')">${rsvpLabel}</button>
+      </div>`;
+  }
+
+  function renderMeetupsView() {
+    document.getElementById('meetups-banner').style.display = state.profileSaved ? 'none' : 'flex';
+    const occs = generateOccurrences(14);
+    let html = '';
+    let lastDate = null;
+    for (const occ of occs) {
+      if (occ.dateStr !== lastDate) {
+        html += `<div class="day-header">${formatDateHeader(occ.date)}</div>`;
+        lastDate = occ.dateStr;
+      }
+      html += meetupCardHTML(occ);
+    }
+    if (!html) html = '<div class="empty-state"><span class="empty-icon">🌿</span>No meetups in the next 14 days.</div>';
+    document.getElementById('meetups-list').innerHTML = html;
+  }
+
+  function renderPlansView() {
+    document.getElementById('plans-banner').style.display = state.profileSaved ? 'none' : 'flex';
+    renderProfileCard();
+    const occs = generateOccurrences(14).filter(o => o.isRSVPd);
+    let html = '';
+    let lastDate = null;
+    for (const occ of occs) {
+      if (occ.dateStr !== lastDate) {
+        html += `<div class="day-header">${formatDateHeader(occ.date)}</div>`;
+        lastDate = occ.dateStr;
+      }
+      html += meetupCardHTML(occ);
+    }
+    if (!html) html = '<div class="empty-state"><span class="empty-icon">🐾</span>No meetups planned yet —<br>head to Meetups to RSVP!</div>';
+    document.getElementById('plans-list').innerHTML = html;
+  }
+
+  function renderProfileCard() {
+    const container = document.getElementById('dog-card-container');
+    const d = state.dog;
+    if (!state.profileSaved || !d.name) { container.innerHTML = ''; return; }
+
+    const styles = d.playStyles.length ? d.playStyles.map(s => `<span class="tag">${s}</span>`).join('') : '';
+    const friendly = d.friendlyBreeds ? `<span class="tag green">♥ ${d.friendlyBreeds}</span>` : '';
+    const avoid = d.avoidBreeds ? `<span class="tag red">✕ ${d.avoidBreeds}</span>` : '';
+
+    container.innerHTML = `
+      <div class="dog-card">
+        <div class="dog-card-avatar">${d.avatar}</div>
+        <div class="dog-card-info">
+          <div class="dog-card-name">${d.name}${d.size ? ' · ' + d.size : ''}</div>
+          <div class="dog-card-sub">${[d.breed, d.age].filter(Boolean).join(' · ')}${d.ownerName ? ' · owner: ' + d.ownerName : ''}</div>
+          ${styles || friendly || avoid ? `<div class="dog-card-tags">${styles}${friendly}${avoid}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderDogProfile() {
+    const d = state.dog;
+    // Avatar
+    const avatarRow = document.getElementById('avatar-row');
+    avatarRow.innerHTML = AVATARS.map(a =>
+      `<div class="avatar-opt${d.avatar === a ? ' selected' : ''}" data-avatar="${a}" onclick="selectAvatar('${a}')">${a}</div>`
+    ).join('');
+    // Text inputs
+    document.getElementById('inp-dog-name').value = d.name;
+    document.getElementById('inp-owner-name').value = d.ownerName;
+    document.getElementById('inp-breed').value = d.breed;
+    document.getElementById('inp-age').value = d.age;
+    document.getElementById('inp-friendly').value = d.friendlyBreeds;
+    document.getElementById('inp-avoid').value = d.avoidBreeds;
+    document.getElementById('inp-bio').value = d.bio;
+    // Size pills
+    document.querySelectorAll('#size-row .pill-opt').forEach(el => {
+      el.classList.toggle('selected', el.dataset.size === d.size);
+    });
+    // Play style pills
+    document.querySelectorAll('.style-pill').forEach(el => {
+      el.classList.toggle('selected', d.playStyles.includes(el.dataset.style));
+    });
+  }
+
+  // ── Event handlers ────────────────────────────────────────────────────────
+
+  function selectAvatar(emoji) {
+    state.dog.avatar = emoji;
+    document.querySelectorAll('.avatar-opt').forEach(el => {
+      el.classList.toggle('selected', el.dataset.avatar === emoji);
+    });
+  }
+
+  function saveDogProfile() {
+    const name = document.getElementById('inp-dog-name').value.trim();
+    if (!name) { showToast('Give your dog a name first 🐾'); return; }
+
+    const selectedSize = document.querySelector('#size-row .pill-opt.selected');
+    const selectedStyles = [...document.querySelectorAll('.style-pill.selected')].map(el => el.dataset.style);
+
+    state.dog = {
+      name,
+      ownerName: document.getElementById('inp-owner-name').value.trim(),
+      breed: document.getElementById('inp-breed').value.trim(),
+      size: selectedSize ? selectedSize.dataset.size : '',
+      age: document.getElementById('inp-age').value.trim(),
+      playStyles: selectedStyles,
+      friendlyBreeds: document.getElementById('inp-friendly').value.trim(),
+      avoidBreeds: document.getElementById('inp-avoid').value.trim(),
+      bio: document.getElementById('inp-bio').value.trim(),
+      avatar: state.dog.avatar
+    };
+    state.profileSaved = true;
+    saveState();
+    showToast(name + "'s profile saved 🐾");
+    switchTab('meetups');
+  }
+
+  function toggleRSVP(meetupId, dateStr) {
+    const key = meetupId + '::' + dateStr;
+    if (state.rsvps[key]) {
+      delete state.rsvps[key];
+      showToast('RSVP removed');
+    } else {
+      state.rsvps[key] = true;
+      const meetup = MEETUPS.find(m => m.id === meetupId);
+      showToast('See you at ' + (meetup ? meetup.name : 'the meetup') + '! 🐾');
+    }
+    saveState();
+    renderMeetupsView();
+    renderPlansView();
+  }
+
+  function switchTab(tab) {
+    state.activeTab = tab;
+    saveState();
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + tab).classList.add('active');
+    document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+  }
+
+  // Size pill — single select
+  document.querySelectorAll('#size-row .pill-opt').forEach(el => {
+    el.addEventListener('click', () => {
+      const alreadySelected = el.classList.contains('selected');
+      document.querySelectorAll('#size-row .pill-opt').forEach(p => p.classList.remove('selected'));
+      if (!alreadySelected) el.classList.add('selected');
+    });
+  });
+
+  // Play style pills — multi select
+  document.querySelectorAll('.style-pill').forEach(el => {
+    el.addEventListener('click', () => el.classList.toggle('selected'));
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+
+  function init() {
+    state = loadState();
+    renderDogProfile();
+    renderMeetupsView();
+    renderPlansView();
+    const startTab = state.profileSaved ? state.activeTab : 'dog';
+    switchTab(startTab);
+  }
+
+  init();
+</script>
+</body>
+</html>
